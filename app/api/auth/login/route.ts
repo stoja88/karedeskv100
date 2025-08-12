@@ -1,55 +1,54 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { PrismaClient } from '@prisma/client'
+import { prisma } from '@/lib/database'
+import { loginSchema, validateRequest } from '@/lib/validation'
+import { verifyPassword } from '@/lib/security'
+import { createToken } from '@/lib/auth'
+import { handleApiError, AuthenticationError } from '@/lib/errors'
+import { rateLimit } from '@/lib/rate-limit'
 import bcrypt from 'bcryptjs'
-import jwt from 'jsonwebtoken'
-
-const prisma = new PrismaClient()
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json()
-    const { email, password } = body
-
-    // Validate required fields
-    if (!email || !password) {
+    // Rate limiting
+    const rateLimitResult = rateLimit(request, 5, 300000) // 5 attempts per 5 minutes
+    if (!rateLimitResult.success) {
       return NextResponse.json(
-        { error: 'Email y contraseña son obligatorios' },
-        { status: 400 }
+        { error: 'Demasiados intentos de login. Intenta de nuevo en 5 minutos.' },
+        { status: 429 }
       )
     }
 
+    const body = await request.json()
+    const { email, password } = validateRequest(loginSchema, body)
+
     // Find user
     const user = await prisma.user.findUnique({
-      where: { email }
+      where: { email: email.toLowerCase() }
     })
 
     if (!user) {
-      return NextResponse.json(
-        { error: 'Credenciales inválidas' },
-        { status: 401 }
-      )
+      throw new AuthenticationError('Credenciales inválidas')
+    }
+
+    if (!user.isActive) {
+      throw new AuthenticationError('Cuenta desactivada')
     }
 
     // Verify password
     const isValidPassword = await bcrypt.compare(password, user.password)
 
     if (!isValidPassword) {
-      return NextResponse.json(
-        { error: 'Credenciales inválidas' },
-        { status: 401 }
-      )
+      throw new AuthenticationError('Credenciales inválidas')
     }
 
+    // Update last login
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { lastLogin: new Date() }
+    })
+
     // Create JWT token
-    const token = jwt.sign(
-      { 
-        userId: user.id, 
-        email: user.email, 
-        role: user.role 
-      },
-      process.env.JWT_SECRET || 'fallback-secret',
-      { expiresIn: '7d' }
-    )
+    const token = createToken(user)
 
     // Create response
     const response = NextResponse.json(
@@ -75,12 +74,20 @@ export async function POST(request: NextRequest) {
       path: '/',
     })
 
+    // Log successful login
+    await prisma.auditLog.create({
+      data: {
+        userId: user.id,
+        action: 'LOGIN_SUCCESS',
+        entity: 'User',
+        entityId: user.id,
+        details: { email: user.email }
+      }
+    })
+
     return response
   } catch (error) {
-    console.error('Error during login:', error)
-    return NextResponse.json(
-      { error: 'Error interno del servidor' },
-      { status: 500 }
-    )
+    const { message, statusCode } = handleApiError(error)
+    return NextResponse.json({ error: message }, { status: statusCode })
   }
 }

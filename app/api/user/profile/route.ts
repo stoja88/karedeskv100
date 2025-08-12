@@ -1,22 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { PrismaClient } from '@prisma/client'
-import jwt from 'jsonwebtoken'
+import { prisma } from '@/lib/database'
+import { getAuthUser } from '@/lib/auth'
+import { profileUpdateSchema, validateRequest } from '@/lib/validation'
+import { handleApiError } from '@/lib/errors'
+import { sanitizeInput } from '@/lib/security'
 
-const prisma = new PrismaClient()
 
 export async function GET(request: NextRequest) {
   try {
-    const authHeader = request.headers.get('authorization')
-    if (!authHeader?.startsWith('Bearer ')) {
-      return NextResponse.json({ error: 'Token requerido' }, { status: 401 })
-    }
-
-    const token = authHeader.substring(7)
-    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as any
-    const userId = decoded.userId
+    const user = getAuthUser(request)
 
     const user = await prisma.user.findUnique({
-      where: { id: userId },
+      where: { id: user.userId },
       select: {
         id: true,
         name: true,
@@ -28,56 +23,48 @@ export async function GET(request: NextRequest) {
         country: true,
         postalCode: true,
         taxId: true,
+        role: true,
         createdAt: true,
         lastLogin: true
       }
     })
 
-    if (!user) {
+    if (!userData) {
       return NextResponse.json({ error: 'Usuario no encontrado' }, { status: 404 })
     }
 
     // Update last login
     await prisma.user.update({
-      where: { id: userId },
+      where: { id: user.userId },
       data: { lastLogin: new Date() }
     })
 
-    return NextResponse.json(user)
+    return NextResponse.json(userData)
   } catch (error) {
-    console.error('Error fetching user profile:', error)
-    return NextResponse.json(
-      { error: 'Error interno del servidor' },
-      { status: 500 }
-    )
+    const { message, statusCode } = handleApiError(error)
+    return NextResponse.json({ error: message }, { status: statusCode })
   }
 }
 
 export async function PUT(request: NextRequest) {
   try {
-    const authHeader = request.headers.get('authorization')
-    if (!authHeader?.startsWith('Bearer ')) {
-      return NextResponse.json({ error: 'Token requerido' }, { status: 401 })
-    }
-
-    const token = authHeader.substring(7)
-    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as any
-    const userId = decoded.userId
+    const user = getAuthUser(request)
 
     const body = await request.json()
-    const { name, company, phone, address, city, country, postalCode, taxId } = body
+    const validatedData = validateRequest(profileUpdateSchema, body)
+
+    // Sanitize inputs
+    const sanitizedData = Object.fromEntries(
+      Object.entries(validatedData).map(([key, value]) => [
+        key,
+        typeof value === 'string' ? sanitizeInput(value) : value
+      ])
+    )
 
     const updatedUser = await prisma.user.update({
-      where: { id: userId },
+      where: { id: user.userId },
       data: {
-        name,
-        company,
-        phone,
-        address,
-        city,
-        country,
-        postalCode,
-        taxId,
+        ...sanitizedData,
         updatedAt: new Date()
       },
       select: {
@@ -99,20 +86,17 @@ export async function PUT(request: NextRequest) {
     // Log audit
     await prisma.auditLog.create({
       data: {
-        userId,
+        userId: user.userId,
         action: 'PROFILE_UPDATED',
         entity: 'User',
-        entityId: userId,
-        details: { updatedFields: Object.keys(body) }
+        entityId: user.userId,
+        details: { updatedFields: Object.keys(validatedData) }
       }
     })
 
     return NextResponse.json(updatedUser)
   } catch (error) {
-    console.error('Error updating user profile:', error)
-    return NextResponse.json(
-      { error: 'Error interno del servidor' },
-      { status: 500 }
-    )
+    const { message, statusCode } = handleApiError(error)
+    return NextResponse.json({ error: message }, { status: statusCode })
   }
 }

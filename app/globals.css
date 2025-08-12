@@ -163,6 +163,36 @@ body {
 .light .dark\:text-white { color: #0f172a !important; }
 .light .text-white { color: #0f172a !important; }
 
+/* Error states */
+.error-input {
+  border-color: #ef4444 !important;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1) !important;
+}
+
+.success-input {
+  border-color: #10b981 !important;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1) !important;
+}
+
+/* Loading states */
+.loading-skeleton {
+  background: linear-gradient(90deg, rgba(255,255,255,0.1) 25%, rgba(255,255,255,0.2) 50%, rgba(255,255,255,0.1) 75%);
+  background-size: 200% 100%;
+  animation: loading-shimmer 1.5s infinite;
+}
+
+@keyframes loading-shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+/* Improved focus states for better accessibility */
+.focus-ring:focus-visible {
+  outline: 2px solid #7FBFBF;
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px rgba(127, 191, 191, 0.2);
+}
+
 /* Footer */
 .light footer {
   background: #FFFFFF !important;
@@ -407,4 +437,30 @@ a {
 
 .stats-card {
   animation: pulse-glow 3s ease-in-out infinite;
+}
+
+/* Performance optimizations */
+.will-change-transform {
+  will-change: transform;
+}
+
+.will-change-opacity {
+  will-change: opacity;
+}
+
+/* Print styles */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  
+  body {
+    background: white !important;
+    color: black !important;
+  }
+  
+  .glass-effect {
+    background: white !important;
+    border: 1px solid #ccc !important;
+  }
 }

@@ -3,6 +3,9 @@ import { Inter } from 'next/font/google'
 import './globals.css'
 import { ThemeProvider } from '@/contexts/ThemeContext'
 import Header from '@/components/Header'
+import ErrorBoundary from '@/components/ErrorBoundary'
+import { Suspense } from 'react'
+import LoadingPage from '@/components/LoadingPage'
 
 const inter = Inter({ 
   subsets: ['latin'],
@@ -47,6 +50,9 @@ export const metadata: Metadata = {
       'max-snippet': -1,
     },
   },
+  verification: {
+    google: process.env.GOOGLE_SITE_VERIFICATION,
+  },
 }
 
 export const viewport: Viewport = {
@@ -67,12 +73,22 @@ export default function RootLayout({
 }) {
   return (
     <html lang="es" suppressHydrationWarning className={inter.variable}>
+      <head>
+        <meta name="format-detection" content="telephone=no" />
+        <meta name="theme-color" content="#7FBFBF" />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+      </head>
       <body className={`${inter.className} antialiased`}>
         <a href="#contenido" className="skip-link">Saltar al contenido principal</a>
-        <ThemeProvider>
-          <Header />
-          {children}
-        </ThemeProvider>
+        <ErrorBoundary>
+          <ThemeProvider>
+            <Suspense fallback={<LoadingPage message="Cargando aplicación..." />}>
+              <Header />
+              {children}
+            </Suspense>
+          </ThemeProvider>
+        </ErrorBoundary>
       </body>
     </html>
   )

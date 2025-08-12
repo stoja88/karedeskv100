@@ -1,8 +1,7 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { motion } from 'framer-motion'
-import { useRouter } from 'next/navigation'
 import { 
   User, 
   ShoppingBag, 
@@ -16,7 +15,10 @@ import {
   AlertCircle
 } from 'lucide-react'
 import { ThemeProvider } from '@/contexts/ThemeContext'
+import { useAuth } from '@/hooks/useAuth'
+import ProtectedRoute from '@/components/ProtectedRoute'
 import LoadingSpinner from '@/components/LoadingSpinner'
+import ErrorBoundary from '@/components/ErrorBoundary'
 
 interface Order {
   id: string
@@ -39,65 +41,42 @@ interface User {
   company?: string
 }
 
-export default function DashboardPage() {
-  const router = useRouter()
-  const [user, setUser] = useState<User | null>(null)
+function DashboardContent() {
+  const { user, logout } = useAuth()
   const [orders, setOrders] = useState<Order[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState('orders')
 
   useEffect(() => {
-    const token = localStorage.getItem('auth-token')
-    if (!token) {
-      router.push('/login')
-      return
+    if (user) {
+      fetchOrders()
     }
-
-    fetchUserData()
-    fetchOrders()
-  }, [router])
-
-  const fetchUserData = async () => {
-    try {
-      const token = localStorage.getItem('auth-token')
-      const response = await fetch('/api/user/profile', {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      })
-
-      if (response.ok) {
-        const userData = await response.json()
-        setUser(userData)
-      }
-    } catch (error) {
-      console.error('Error fetching user data:', error)
-    }
-  }
+  }, [user])
 
   const fetchOrders = async () => {
+    setError(null)
     try {
-      const token = localStorage.getItem('auth-token')
       const response = await fetch('/api/orders', {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
+        credentials: 'include'
       })
 
       if (response.ok) {
         const ordersData = await response.json()
         setOrders(ordersData)
+      } else {
+        throw new Error('Error al cargar pedidos')
       }
     } catch (error) {
       console.error('Error fetching orders:', error)
+      setError('Error al cargar los datos')
     } finally {
       setLoading(false)
     }
   }
 
-  const handleLogout = () => {
-    localStorage.removeItem('auth-token')
-    router.push('/')
+  const handleLogout = async () => {
+    await logout()
   }
 
   const getServiceName = (service: string) => {
@@ -151,19 +130,34 @@ export default function DashboardPage() {
     })
   }
 
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <AlertCircle className="w-16 h-16 text-red-400 mx-auto mb-4" />
+          <h2 className="text-xl font-semibold mb-2">Error al cargar el dashboard</h2>
+          <p className="text-gray-400 mb-6">{error}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="btn-primary px-6 py-3 rounded-lg text-black font-semibold"
+          >
+            Reintentar
+          </button>
+        </div>
+      </div>
+    )
+  }
+
   if (loading) {
     return (
-      <ThemeProvider>
-        <div className="min-h-screen flex items-center justify-center">
-          <LoadingSpinner size="lg" text="Cargando dashboard..." />
-        </div>
-      </ThemeProvider>
+      <div className="min-h-screen flex items-center justify-center">
+        <LoadingSpinner size="lg" text="Cargando dashboard..." />
+      </div>
     )
   }
 
   return (
-    <ThemeProvider>
-      <div className="min-h-screen bg-karedesk-dark dark:bg-karedesk-dark">
+    <div className="min-h-screen bg-karedesk-dark dark:bg-karedesk-dark">
         <div className="flex">
           {/* Sidebar */}
           <div className="w-64 bg-karedesk-gray dark:bg-karedesk-gray min-h-screen p-6">
@@ -365,6 +359,19 @@ export default function DashboardPage() {
           </div>
         </div>
       </div>
+  )
+}
+
+export default function DashboardPage() {
+  return (
+    <ThemeProvider>
+      <ErrorBoundary>
+        <ProtectedRoute>
+          <Suspense fallback={<LoadingSpinner size="lg" text="Cargando dashboard..." />}>
+            <DashboardContent />
+          </Suspense>
+        </ProtectedRoute>
+      </ErrorBoundary>
     </ThemeProvider>
   )
 }

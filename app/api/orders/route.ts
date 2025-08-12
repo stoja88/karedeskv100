@@ -1,22 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { PrismaClient } from '@prisma/client'
-import jwt from 'jsonwebtoken'
+import { prisma } from '@/lib/database'
+import { getAuthUser } from '@/lib/auth'
+import { orderSchema, validateRequest } from '@/lib/validation'
+import { handleApiError } from '@/lib/errors'
+import { sendEmail, generateOrderConfirmationEmail } from '@/lib/email'
 
-const prisma = new PrismaClient()
 
 export async function GET(request: NextRequest) {
   try {
-    const authHeader = request.headers.get('authorization')
-    if (!authHeader?.startsWith('Bearer ')) {
-      return NextResponse.json({ error: 'Token requerido' }, { status: 401 })
-    }
-
-    const token = authHeader.substring(7)
-    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as any
-    const userId = decoded.userId
+    const user = getAuthUser(request)
 
     const orders = await prisma.order.findMany({
-      where: { userId },
+      where: { userId: user.userId },
       include: {
         payments: true,
         invoice: true
@@ -26,44 +21,27 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(orders)
   } catch (error) {
-    console.error('Error fetching orders:', error)
-    return NextResponse.json(
-      { error: 'Error interno del servidor' },
-      { status: 500 }
-    )
+    const { message, statusCode } = handleApiError(error)
+    return NextResponse.json({ error: message }, { status: statusCode })
   }
 }
 
 export async function POST(request: NextRequest) {
   try {
-    const authHeader = request.headers.get('authorization')
-    if (!authHeader?.startsWith('Bearer ')) {
-      return NextResponse.json({ error: 'Token requerido' }, { status: 401 })
-    }
-
-    const token = authHeader.substring(7)
-    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as any
-    const userId = decoded.userId
+    const user = getAuthUser(request)
 
     const body = await request.json()
-    const { service, plan, amount, description, metadata } = body
-
-    // Validate required fields
-    if (!service || !plan || !amount) {
-      return NextResponse.json(
-        { error: 'Faltan campos obligatorios' },
-        { status: 400 }
-      )
-    }
+    const validatedData = validateRequest(orderSchema, body)
 
     const order = await prisma.order.create({
       data: {
-        userId,
-        service,
-        plan,
-        amount,
-        description,
-        metadata,
+        userId: user.userId,
+        service: validatedData.service,
+        plan: validatedData.plan,
+        amount: validatedData.amount,
+        currency: validatedData.currency,
+        description: validatedData.description,
+        metadata: validatedData.metadata,
         status: 'PENDING'
       },
       include: {
@@ -74,20 +52,28 @@ export async function POST(request: NextRequest) {
     // Log audit
     await prisma.auditLog.create({
       data: {
-        userId,
+        userId: user.userId,
         action: 'ORDER_CREATED',
         entity: 'Order',
         entityId: order.id,
-        details: { service, plan, amount }
+        details: { 
+          service: validatedData.service, 
+          plan: validatedData.plan, 
+          amount: validatedData.amount 
+        }
       }
     })
 
+    // Send order confirmation email (async)
+    sendEmail({
+      to: order.user.email,
+      subject: 'Confirmación de Pedido - Karedesk',
+      html: generateOrderConfirmationEmail(order)
+    }).catch(error => console.error('Failed to send order confirmation:', error))
+
     return NextResponse.json(order, { status: 201 })
   } catch (error) {
-    console.error('Error creating order:', error)
-    return NextResponse.json(
-      { error: 'Error interno del servidor' },
-      { status: 500 }
-    )
+    const { message, statusCode } = handleApiError(error)
+    return NextResponse.json({ error: message }, { status: statusCode })
   }
 }

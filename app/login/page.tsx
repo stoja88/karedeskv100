@@ -1,21 +1,38 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { motion } from 'framer-motion'
 import Link from 'next/link'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Image from 'next/image'
 import { Eye, EyeOff, Mail, Lock, ArrowLeft, AlertCircle } from 'lucide-react'
+import { useAuth } from '@/hooks/useAuth'
+import { ThemeProvider } from '@/contexts/ThemeContext'
+import FormField from '@/components/FormField'
+import { Suspense } from 'react'
 
 interface LoginForm {
   email: string
   password: string
 }
 
-export default function LoginPage() {
+function LoginContent() {
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  const { login, user } = useAuth()
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
+
+  const redirectTo = searchParams.get('redirect') || '/dashboard'
+
+  // Redirect if already logged in
+  useEffect(() => {
+    if (user) {
+      router.push(redirectTo)
+    }
+  }, [user, router, redirectTo])
 
   const {
     register,
@@ -27,27 +44,18 @@ export default function LoginPage() {
     setIsLoading(true)
     setError('')
 
-    try {
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data),
-      })
-
-      if (response.ok) {
-        // Redirect to dashboard
-        window.location.href = '/dashboard'
-      } else {
-        const errorData = await response.json()
-        setError(errorData.error || 'Error al iniciar sesión')
-      }
-    } catch (error) {
-      setError('Error de conexión')
-    } finally {
+    const result = await login(data.email, data.password)
+    
+    if (result.success) {
+      router.push(redirectTo)
+    } else {
+      setError(result.error || 'Error al iniciar sesión')
       setIsLoading(false)
     }
+  }
+
+  if (user) {
+    return null // Will redirect
   }
 
   return (
@@ -107,30 +115,21 @@ export default function LoginPage() {
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
               {/* Email Field */}
               <div>
-                <label className="block text-sm font-semibold mb-2">
-                  Email
-                </label>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-                  <input
-                    {...register('email', {
-                      required: 'El email es obligatorio',
-                      pattern: {
-                        value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-                        message: 'Email inválido'
-                      }
-                    })}
-                    type="email"
-                    className="form-input w-full pl-12 pr-4 py-3 rounded-lg text-white placeholder-gray-400"
-                    placeholder="tu@email.com"
-                  />
-                </div>
-                {errors.email && (
-                  <p className="text-red-400 text-sm mt-1 flex items-center">
-                    <AlertCircle className="w-4 h-4 mr-1" />
-                    {errors.email.message}
-                  </p>
-                )}
+                <FormField
+                  {...register('email', {
+                    required: 'El email es obligatorio',
+                    pattern: {
+                      value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
+                      message: 'Email inválido'
+                    }
+                  })}
+                  label="Email"
+                  type="email"
+                  icon={Mail}
+                  placeholder="tu@email.com"
+                  error={errors.email?.message}
+                  required
+                />
               </div>
 
               {/* Password Field */}
@@ -144,8 +143,8 @@ export default function LoginPage() {
                     {...register('password', {
                       required: 'La contraseña es obligatoria',
                       minLength: {
-                        value: 6,
-                        message: 'La contraseña debe tener al menos 6 caracteres'
+                        value: 8,
+                        message: 'La contraseña debe tener al menos 8 caracteres'
                       }
                     })}
                     type={showPassword ? 'text' : 'password'}
@@ -211,5 +210,15 @@ export default function LoginPage() {
           </div>
         </div>
       </div>
+  )
+}
+
+export default function LoginPage() {
+  return (
+    <ThemeProvider>
+      <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><div>Cargando...</div></div>}>
+        <LoginContent />
+      </Suspense>
+    </ThemeProvider>
   )
 }
