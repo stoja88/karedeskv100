@@ -1,0 +1,10 @@
+<svg width="500" height="500" viewBox="0 0 500 500" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="500" height="500" fill="#0A0A0A"/>
+  
+  <!-- K Letter -->
+  <path d="M100 100 L100 400 L140 400 L140 260 L280 400 L340 400 L200 250 L340 100 L280 100 L140 240 L140 100 Z" fill="#7FBFBF"/>
+  
+  <!-- Karedesk Text -->
+  <text x="50" y="460" font-family="Inter, sans-serif" font-size="48" font-weight="400" fill="#7FBFBF">Karedesk</text>
+</svg>

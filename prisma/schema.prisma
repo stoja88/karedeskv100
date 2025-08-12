@@ -1,0 +1,314 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  name      String
+  company   String?
+  phone     String?
+  address   String?
+  city      String?
+  country   String?  @default("España")
+  postalCode String?
+  taxId     String?  // NIF/CIF
+  role      Role     @default(CLIENT)
+  isActive  Boolean  @default(true)
+  emailVerified Boolean @default(false)
+  lastLogin DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  consultations Consultation[]
+  orders        Order[]
+  invoices      Invoice[]
+  tickets       Ticket[]
+  subscriptions Subscription[]
+  
+  @@map("users")
+}
+
+model Consultation {
+  id          String            @id @default(cuid())
+  userId      String
+  service     ServiceType
+  status      ConsultationStatus @default(PENDING)
+  description String
+  budget      Float?
+  urgency     UrgencyLevel      @default(MEDIUM)
+  assignedTo  String?           // Admin user ID
+  notes       String?
+  scheduledAt DateTime?
+  completedAt DateTime?
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+  
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@map("consultations")
+}
+
+model Contact {
+  id        String      @id @default(cuid())
+  name      String
+  email     String
+  company   String?
+  phone     String?
+  service   ServiceType
+  message   String
+  status    ContactStatus @default(NEW)
+  responded Boolean     @default(false)
+  createdAt DateTime    @default(now())
+  
+  @@map("contacts")
+}
+
+model Order {
+  id          String      @id @default(cuid())
+  userId      String
+  service     ServiceType
+  plan        String      // Basic, Professional, Enterprise
+  amount      Float
+  currency    String      @default("EUR")
+  status      OrderStatus @default(PENDING)
+  paymentId   String?     // Stripe payment intent ID
+  description String?
+  metadata    Json?       // Additional service details
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  
+  user     User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  invoice  Invoice?
+  payments Payment[]
+  
+  @@map("orders")
+}
+
+model Payment {
+  id            String        @id @default(cuid())
+  orderId       String
+  amount        Float
+  currency      String        @default("EUR")
+  status        PaymentStatus @default(PENDING)
+  method        PaymentMethod
+  stripeId      String?       // Stripe payment intent ID
+  transactionId String?       // External transaction ID
+  failureReason String?
+  processedAt   DateTime?
+  createdAt     DateTime      @default(now())
+  
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  
+  @@map("payments")
+}
+
+model Invoice {
+  id          String        @id @default(cuid())
+  orderId     String        @unique
+  userId      String
+  number      String        @unique // INV-2024-001
+  amount      Float
+  tax         Float         @default(0)
+  total       Float
+  currency    String        @default("EUR")
+  status      InvoiceStatus @default(DRAFT)
+  dueDate     DateTime
+  paidAt      DateTime?
+  pdfUrl      String?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@map("invoices")
+}
+
+model Ticket {
+  id          String       @id @default(cuid())
+  userId      String
+  title       String
+  description String
+  priority    Priority     @default(MEDIUM)
+  status      TicketStatus @default(OPEN)
+  category    String?      // Technical, Billing, General
+  assignedTo  String?      // Admin user ID
+  resolvedAt  DateTime?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  
+  user     User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages TicketMessage[]
+  
+  @@map("tickets")
+}
+
+model TicketMessage {
+  id        String   @id @default(cuid())
+  ticketId  String
+  userId    String
+  message   String
+  isInternal Boolean @default(false) // Internal admin notes
+  createdAt DateTime @default(now())
+  
+  ticket Ticket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  
+  @@map("ticket_messages")
+}
+
+model ServicePlan {
+  id          String      @id @default(cuid())
+  service     ServiceType
+  name        String      // Basic, Professional, Enterprise
+  price       Float
+  currency    String      @default("EUR")
+  billing     BillingType @default(MONTHLY)
+  features    Json        // Array of features
+  isActive    Boolean     @default(true)
+  description String?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  
+  @@unique([service, name])
+  @@map("service_plans")
+}
+
+model Subscription {
+  id              String             @id @default(cuid())
+  userId          String
+  service         ServiceType
+  plan            String
+  status          SubscriptionStatus @default(ACTIVE)
+  stripeId        String?            // Stripe subscription ID
+  currentPeriodStart DateTime
+  currentPeriodEnd   DateTime
+  cancelAtPeriodEnd  Boolean         @default(false)
+  canceledAt      DateTime?
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+  
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@map("subscriptions")
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  userId    String?
+  action    String   // LOGIN, ORDER_CREATED, PAYMENT_PROCESSED, etc.
+  entity    String?  // User, Order, Payment, etc.
+  entityId  String?
+  details   Json?
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime @default(now())
+  
+  @@map("audit_logs")
+}
+
+// Enums
+enum Role {
+  CLIENT
+  ADMIN
+  SUPER_ADMIN
+}
+
+enum ServiceType {
+  WEB_VULNERABILITY_ANALYSIS
+  REMOTE_IT_SUPPORT
+  EXPRESS_WEB_CREATION
+  AI_CONSULTING
+}
+
+enum ConsultationStatus {
+  PENDING
+  SCHEDULED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum ContactStatus {
+  NEW
+  CONTACTED
+  QUALIFIED
+  CONVERTED
+  CLOSED
+}
+
+enum UrgencyLevel {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+  REFUNDED
+}
+
+enum PaymentStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+  CANCELLED
+  REFUNDED
+}
+
+enum PaymentMethod {
+  CREDIT_CARD
+  DEBIT_CARD
+  BANK_TRANSFER
+  PAYPAL
+  STRIPE
+}
+
+enum InvoiceStatus {
+  DRAFT
+  SENT
+  PAID
+  OVERDUE
+  CANCELLED
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum TicketStatus {
+  OPEN
+  IN_PROGRESS
+  WAITING_RESPONSE
+  RESOLVED
+  CLOSED
+}
+
+enum BillingType {
+  MONTHLY
+  YEARLY
+  ONE_TIME
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  CANCELLED
+  PAST_DUE
+  UNPAID
+  INCOMPLETE
+}
