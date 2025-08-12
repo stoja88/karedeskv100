@@ -10,6 +10,11 @@ export default defineConfig({
       '@': path.resolve(__dirname, './'),
     },
   },
+  define: {
+    // Define process and other Node.js globals for browser compatibility
+    global: 'globalThis',
+    'process.env': {},
+  },
   server: {
     port: 3001,
     open: true,
@@ -17,5 +22,9 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     sourcemap: true,
+  },
+  // Add polyfills for Node.js modules
+  optimizeDeps: {
+    include: ['react', 'react-dom']
   },
 })

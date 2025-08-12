@@ -1,16 +1,24 @@
 'use client'
 
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { Mail, Phone, MapPin, Shield, Zap, Globe, Brain } from 'lucide-react'
 import { useTheme } from '@/contexts/ThemeContext'
 
 export default function Footer() {
+  const [mounted, setMounted] = useState(false)
   const { theme } = useTheme()
-  const currentYear = new Date().getFullYear()
-  const footerBg = theme === 'light' ? 'bg-white' : 'bg-karedesk-gray'
-  const borderColor = theme === 'light' ? 'border-karedesk-light-border' : 'border-karedesk-primary/20'
-  const textColor = theme === 'light' ? 'text-karedesk-text-light' : ''
+  
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  // Evitar hidratación con valores estáticos durante SSR
+  const currentYear = mounted ? new Date().getFullYear() : 2024
+  const footerBg = mounted ? (theme === 'light' ? 'bg-white' : 'bg-karedesk-gray') : 'bg-karedesk-gray'
+  const borderColor = mounted ? (theme === 'light' ? 'border-karedesk-light-border' : 'border-karedesk-primary/20') : 'border-karedesk-primary/20'
+  const textColor = mounted ? (theme === 'light' ? 'text-karedesk-text-light' : '') : ''
 
   const services = [
     { name: 'Análisis de Vulnerabilidades', href: '/servicios/vulnerabilidades', icon: Shield },
@@ -25,6 +33,36 @@ export default function Footer() {
     { name: 'Contacto', href: '/#contacto' },
     { name: 'Acceso Cliente', href: '/login' },
   ]
+
+  // Durante SSR, mostrar versión simplificada
+  if (!mounted) {
+    return (
+      <footer
+        className={`${footerBg} ${textColor} border-t ${borderColor} relative overflow-hidden`}
+        role="contentinfo"
+        aria-label="Información del sitio"
+      >
+        <div className="container mx-auto px-6 py-20 relative z-10">
+          <div className="grid lg:grid-cols-4 md:grid-cols-2 gap-8">
+            {/* Versión simplificada para SSR */}
+            <div className="space-y-6">
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 bg-gray-600 rounded"></div>
+                <span className="text-2xl font-bold gradient-text">Karedesk</span>
+              </div>
+            </div>
+          </div>
+          <div className={`border-t ${borderColor} mt-12 pt-8`}>
+            <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
+              <div className="text-gray-400 text-sm">
+                © {currentYear} Karedesk. Todos los derechos reservados.
+              </div>
+            </div>
+          </div>
+        </div>
+      </footer>
+    )
+  }
 
   return (
     <footer

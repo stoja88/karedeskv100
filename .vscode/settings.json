@@ -1,4 +1,13 @@
 {
     "kiroAgent.configureMCP": "Enabled",
-    "typescript.autoClosingTags": false
+    "typescript.autoClosingTags": false,
+    "zencoder.mcpServers": {
+        "context7": {
+            "command": "npx",
+            "args": [
+                "-y",
+                "@upstash/context7-mcp@latest"
+            ]
+        }
+    }
 }

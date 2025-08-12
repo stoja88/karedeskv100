@@ -37,20 +37,31 @@
 ### 1. Configurar Base de Datos Real
 
 **Opción A: Supabase (Recomendado - Gratis)**
+1. Ve a [https://supabase.com](https://supabase.com)
+2. Crea una cuenta y un nuevo proyecto llamado `karedesk-portal`
+3. En Project Settings > Database, copia la Connection String
+4. Formato: `postgresql://postgres:[PASSWORD]@[HOST].supabase.co:5432/postgres`
+
 ```bash
-# 1. Ve a https://supabase.com
-# 2. Crea proyecto
-# 3. Copia connection string
-# 4. Actualiza:
-gh secret set DATABASE_URL --body "postgresql://postgres:[PASSWORD]@[HOST]:5432/postgres"
+# Actualiza DATABASE_URL en GitHub Secrets
+gh secret set DATABASE_URL --body "postgresql://postgres:[TU-PASSWORD]@[TU-HOST].supabase.co:5432/postgres"
+
+# Actualiza DATABASE_URL en Vercel
 vercel env add DATABASE_URL production --force
 ```
 
 **Opción B: Neon (Serverless)**
+1. Ve a [https://neon.tech](https://neon.tech)
+2. Crea una cuenta y una nueva base de datos
+3. Copia la connection string de la sección "Connection Details"
+4. Actualiza las variables de entorno:
+
 ```bash
-# 1. Ve a https://neon.tech
-# 2. Crea base de datos
-# 3. Actualiza connection string
+# Actualiza DATABASE_URL en GitHub Secrets
+gh secret set DATABASE_URL --body "tu-connection-string-de-neon"
+
+# Actualiza DATABASE_URL en Vercel
+vercel env add DATABASE_URL production --force
 ```
 
 ### 2. Configurar Stripe Real
@@ -69,7 +80,18 @@ vercel env add STRIPE_SECRET_KEY production --force
 
 ### 3. Verificar Funcionamiento
 
+Después de configurar la base de datos, ejecuta estos comandos:
+
 ```bash
+# Generar cliente Prisma
+npm run db:generate
+
+# Crear y aplicar migraciones
+npm run db:migrate
+
+# Poblar con datos iniciales
+npm run db:seed
+
 # Verificar deployment
 vercel ls
 
@@ -78,6 +100,19 @@ vercel logs https://carpeta-sin-titulo-101.vercel.app
 
 # Probar localmente
 npm run dev
+```
+
+### 4. Comandos Útiles de Base de Datos
+
+```bash
+# Ver la base de datos en Prisma Studio
+npm run db:studio
+
+# Verificar conexión
+npx prisma db pull
+
+# Resetear base de datos (solo desarrollo)
+npx prisma migrate reset
 ```
 
 ## 🎯 Funcionalidades Disponibles

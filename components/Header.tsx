@@ -1,8 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import Link from 'next/link'
-import Image from 'next/image'
+import CompatibleImage from './CompatibleImage'
 import { Menu, X, Shield, Zap, Globe, Brain, ChevronDown, ArrowRight } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import ThemeToggle from './ThemeToggle'
@@ -12,6 +11,7 @@ export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [isServicesOpen, setIsServicesOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
+  const [mounted, setMounted] = useState(false)
   const servicesRef = useRef<HTMLDivElement | null>(null)
   const { theme } = useTheme()
 
@@ -22,48 +22,50 @@ export default function Header() {
     { 
       name: 'Análisis de Vulnerabilidades', 
       href: '/servicios/vulnerabilidades', 
-      buy: '/servicios/vulnerabilidades#paquetes', 
-      contact: '/servicios/vulnerabilidades#contacto', 
       icon: Shield,
       description: 'Protección avanzada para tu web'
     },
     { 
       name: 'Asistencia Remota', 
       href: '/servicios/asistencia-remota', 
-      buy: '/servicios/asistencia-remota#planes', 
-      contact: '/servicios/asistencia-remota#contacto', 
       icon: Zap,
       description: 'Soporte técnico inmediato'
     },
     { 
       name: 'Webs Express', 
       href: '/servicios/webs-express', 
-      buy: '/servicios/webs-express#tipos', 
-      contact: '/servicios/webs-express#contacto', 
       icon: Globe,
       description: 'Sitios web en tiempo récord'
     },
     { 
       name: 'Consultoría IA', 
       href: '/servicios/consultoria-ia', 
-      buy: '/servicios/consultoria-ia#soluciones', 
-      contact: '/servicios/consultoria-ia#contacto', 
       icon: Brain,
       description: 'Transformación digital con IA'
     },
   ]
 
+  // Handle client-side mounting
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
   // Handle scroll effect
   useEffect(() => {
+    if (!mounted) return
+    
     const handleScroll = () => {
       setScrolled(window.scrollY > 20)
     }
+    
     window.addEventListener('scroll', handleScroll)
     return () => window.removeEventListener('scroll', handleScroll)
-  }, [])
+  }, [mounted])
 
   // Close services dropdown on outside click
   useEffect(() => {
+    if (!mounted) return
+    
     function handleClickOutside(event: MouseEvent) {
       if (!isServicesOpen) return
       const target = event.target as Node
@@ -71,9 +73,53 @@ export default function Header() {
         setIsServicesOpen(false)
       }
     }
+    
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [isServicesOpen])
+  }, [isServicesOpen, mounted])
+
+  // Smooth scroll handler
+  const handleSmoothScroll = (targetId: string) => {
+    if (!mounted) return
+    
+    const element = document.getElementById(targetId.replace('#', ''))
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth' })
+    }
+  }
+
+  // Prevent hydration mismatch by not rendering until mounted
+  if (!mounted) {
+    return (
+      <header className="fixed top-0 w-full z-50 bg-transparent">
+        <nav className="container mx-auto px-6 py-4" aria-label="Navegación principal">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center group">
+              <div className="relative">
+                <CompatibleImage 
+                  src="/logo.png" 
+                  alt="Karedesk Logo" 
+                  width={40} 
+                  height={40} 
+                  className="w-10 h-10"
+                />
+              </div>
+            </div>
+            <div className="hidden lg:flex items-center space-x-8">
+              <span className={linkText}>Inicio</span>
+              <span className={linkText}>Servicios</span>
+              <span className={linkText}>Contacto</span>
+              <span className={linkText}>Acceso</span>
+              <ThemeToggle />
+            </div>
+            <div className="lg:hidden">
+              <Menu size={20} className={buttonText} />
+            </div>
+          </div>
+        </nav>
+      </header>
+    )
+  }
 
   return (
     <header 
@@ -86,32 +132,32 @@ export default function Header() {
       <nav className="container mx-auto px-6 py-4" aria-label="Navegación principal">
         <div className="flex items-center justify-between">
           {/* Logo */}
-          <Link 
+          <a 
             href="/" 
             className="flex items-center group" 
             aria-label="Ir al inicio"
           >
             <div className="relative">
-              <Image 
+              <CompatibleImage 
                 src="/logo.png" 
                 alt="Karedesk Logo" 
-                width={44} 
-                height={44} 
-                className="w-11 h-11 transition-transform duration-300 group-hover:scale-110"
+                width={40} 
+                height={40} 
+                className="w-10 h-10 transition-transform duration-300 group-hover:scale-110"
               />
               <div className="absolute inset-0 bg-karedesk-primary/20 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 blur-md" />
             </div>
-          </Link>
+          </a>
 
           {/* Desktop Navigation */}
           <div className="hidden lg:flex items-center space-x-8">
-            <Link 
-              href="#inicio" 
-              className={`${linkText} hover:text-karedesk-primary transition-all duration-300 font-medium relative group`}
+            <button 
+              onClick={() => handleSmoothScroll('inicio')}
+              className={`${linkText} hover:text-karedesk-primary transition-all duration-300 font-medium relative group cursor-pointer`}
             >
               Inicio
               <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-karedesk-primary transition-all duration-300 group-hover:w-full" />
-            </Link>
+            </button>
             
             <div
               className="relative"
@@ -149,9 +195,9 @@ export default function Header() {
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: -8, scale: 0.95 }}
                     transition={{ duration: 0.2, ease: "easeOut" }}
-                    className="absolute top-full left-0 pt-3 w-96 z-50"
+                    className="absolute top-full left-0 pt-3 w-80 z-50"
                   >
-                    <div className="bg-white/95 dark:bg-slate-800/95 backdrop-blur-xl border border-slate-200/50 dark:border-slate-600/50 rounded-2xl shadow-2xl p-6 space-y-3">
+                    <div className="bg-white/95 dark:bg-slate-800/95 backdrop-blur-xl border border-slate-200/50 dark:border-slate-600/50 rounded-2xl shadow-2xl p-4 space-y-2">
                       {services.map((service, index) => (
                         <motion.div
                           key={service.name}
@@ -159,44 +205,25 @@ export default function Header() {
                           animate={{ opacity: 1, x: 0 }}
                           transition={{ delay: index * 0.05 }}
                         >
-                          <div className="group/item p-4 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-all duration-300 border border-transparent hover:border-slate-200 dark:hover:border-slate-600">
-                            <div className="flex items-start justify-between gap-4">
-                              <Link
-                                href={service.href}
-                                className="flex-1 flex items-start space-x-4 group-hover/item:translate-x-1 transition-transform duration-300"
-                                role="menuitem"
-                                onClick={() => setIsServicesOpen(false)}
-                              >
-                                <div className="w-12 h-12 bg-gradient-to-br from-karedesk-primary/20 to-karedesk-primary/10 rounded-xl flex items-center justify-center group-hover/item:scale-110 transition-all duration-300">
-                                  <service.icon className="w-6 h-6 text-karedesk-primary" />
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                  <h4 className="font-semibold text-slate-900 dark:text-white group-hover/item:text-karedesk-primary transition-colors duration-300">
-                                    {service.name}
-                                  </h4>
-                                  <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
-                                    {service.description}
-                                  </p>
-                                </div>
-                              </Link>
-                              <div className="flex items-center gap-2 shrink-0">
-                                <Link 
-                                  href={service.buy} 
-                                  className="bg-karedesk-primary hover:bg-karedesk-primary/90 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-300 hover:shadow-lg hover:scale-105" 
-                                  onClick={() => setIsServicesOpen(false)}
-                                >
-                                  Comprar
-                                </Link>
-                                <Link 
-                                  href={service.contact} 
-                                  className="border border-slate-300 dark:border-slate-600 hover:border-karedesk-primary text-slate-700 dark:text-slate-300 hover:text-karedesk-primary px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-300 hover:bg-slate-50 dark:hover:bg-slate-700/50" 
-                                  onClick={() => setIsServicesOpen(false)}
-                                >
-                                  Consultar
-                                </Link>
-                              </div>
+                          <a
+                            href={service.href}
+                            className="flex items-center space-x-4 p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-all duration-300 border border-transparent hover:border-slate-200 dark:hover:border-slate-600 group/item"
+                            role="menuitem"
+                            onClick={() => setIsServicesOpen(false)}
+                          >
+                            <div className="w-10 h-10 bg-gradient-to-br from-karedesk-primary/20 to-karedesk-primary/10 rounded-xl flex items-center justify-center group-hover/item:scale-105 transition-all duration-300">
+                              <service.icon className="w-5 h-5 text-karedesk-primary" />
                             </div>
-                          </div>
+                            <div className="flex-1">
+                              <h4 className="font-semibold text-slate-900 dark:text-white group-hover/item:text-karedesk-primary transition-colors duration-300 text-sm">
+                                {service.name}
+                              </h4>
+                              <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">
+                                {service.description}
+                              </p>
+                            </div>
+                            <ArrowRight className="w-4 h-4 text-slate-400 group-hover/item:text-karedesk-primary group-hover/item:translate-x-1 transition-all duration-300" />
+                          </a>
                         </motion.div>
                       ))}
                     </div>
@@ -205,35 +232,32 @@ export default function Header() {
               </AnimatePresence>
             </div>
             
-            <Link 
-              href="/#contacto" 
-              prefetch={false} 
-              className={`${linkText} hover:text-karedesk-primary transition-all duration-300 font-medium relative group`}
+            <button 
+              onClick={() => handleSmoothScroll('contacto')}
+              className={`${linkText} hover:text-karedesk-primary transition-all duration-300 font-medium relative group cursor-pointer`}
             >
               Contacto
               <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-karedesk-primary transition-all duration-300 group-hover:w-full" />
-            </Link>
+            </button>
             
-            <Link 
+            <a 
               href="/login" 
-              prefetch={false} 
               className={`${linkText} hover:text-karedesk-primary transition-all duration-300 font-medium relative group`}
             >
               Acceso
               <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-karedesk-primary transition-all duration-300 group-hover:w-full" />
-            </Link>
+            </a>
             
             <ThemeToggle />
             
             <div className="relative group">
-              <Link 
-                href="/#contacto" 
-                prefetch={false} 
-                className="bg-gradient-to-r from-karedesk-primary to-karedesk-primary/90 hover:from-karedesk-primary/90 hover:to-karedesk-primary text-white px-8 py-3 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 inline-flex items-center gap-2"
+              <button 
+                onClick={() => handleSmoothScroll('contacto')}
+                className="bg-gradient-to-r from-karedesk-primary to-karedesk-primary/90 hover:from-karedesk-primary/90 hover:to-karedesk-primary text-white px-6 py-2.5 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 inline-flex items-center gap-2 text-sm cursor-pointer"
               >
                 Consulta Gratuita
                 <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform duration-300" />
-              </Link>
+              </button>
               <div className="absolute inset-0 bg-karedesk-primary/20 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 blur-xl -z-10" />
             </div>
           </div>
@@ -279,13 +303,15 @@ export default function Header() {
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: 0.1 }}
                 >
-                  <Link 
-                    href="#inicio" 
-                    className={`block ${linkText} hover:text-karedesk-primary transition-all duration-300 font-medium py-3 px-4 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700/50`}
-                    onClick={() => setIsMenuOpen(false)}
+                  <button 
+                    onClick={() => {
+                      handleSmoothScroll('inicio')
+                      setIsMenuOpen(false)
+                    }}
+                    className={`block w-full text-left ${linkText} hover:text-karedesk-primary transition-all duration-300 font-medium py-3 px-4 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700/50`}
                   >
                     Inicio
-                  </Link>
+                  </button>
                 </motion.div>
                 
                 <div className="space-y-3">
@@ -304,7 +330,7 @@ export default function Header() {
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: 0.3 + index * 0.1 }}
                     >
-                      <Link
+                      <a
                         href={service.href}
                         className="flex items-center space-x-4 p-4 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-all duration-300 ml-2 border border-transparent hover:border-slate-200 dark:hover:border-slate-600"
                         onClick={() => setIsMenuOpen(false)}
@@ -318,7 +344,7 @@ export default function Header() {
                             {service.description}
                           </p>
                         </div>
-                      </Link>
+                      </a>
                     </motion.div>
                   ))}
                 </div>
@@ -328,14 +354,15 @@ export default function Header() {
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: 0.7 }}
                 >
-                  <Link 
-                    href="/#contacto" 
-                    prefetch={false} 
-                    className={`block ${linkText} hover:text-karedesk-primary transition-all duration-300 font-medium py-3 px-4 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700/50`}
-                    onClick={() => setIsMenuOpen(false)}
+                  <button 
+                    onClick={() => {
+                      handleSmoothScroll('contacto')
+                      setIsMenuOpen(false)
+                    }}
+                    className={`block w-full text-left ${linkText} hover:text-karedesk-primary transition-all duration-300 font-medium py-3 px-4 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700/50`}
                   >
                     Contacto
-                  </Link>
+                  </button>
                 </motion.div>
                 
                 <motion.div
@@ -343,13 +370,13 @@ export default function Header() {
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: 0.8 }}
                 >
-                  <Link 
+                  <a 
                     href="/login" 
                     className={`block ${linkText} hover:text-karedesk-primary transition-all duration-300 font-medium py-3 px-4 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700/50`}
                     onClick={() => setIsMenuOpen(false)}
                   >
                     Acceso
-                  </Link>
+                  </a>
                 </motion.div>
                 
                 <motion.div
@@ -358,15 +385,16 @@ export default function Header() {
                   transition={{ delay: 0.9 }}
                   className="pt-4"
                 >
-                  <Link 
-                    href="/#contacto" 
-                    prefetch={false}
+                  <button 
+                    onClick={() => {
+                      handleSmoothScroll('contacto')
+                      setIsMenuOpen(false)
+                    }}
                     className="bg-gradient-to-r from-karedesk-primary to-karedesk-primary/90 text-white px-8 py-4 rounded-xl font-semibold text-center block shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 inline-flex items-center justify-center gap-2 w-full"
-                    onClick={() => setIsMenuOpen(false)}
                   >
                     Consulta Gratuita
                     <ArrowRight className="w-4 h-4" />
-                  </Link>
+                  </button>
                 </motion.div>
               </div>
             </motion.div>

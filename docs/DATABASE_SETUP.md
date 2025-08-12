@@ -4,9 +4,9 @@
 
 ### Opción 1: Supabase (Recomendado - Gratis)
 1. Ve a [supabase.com](https://supabase.com)
-2. Crea una cuenta y un nuevo proyecto
-3. En Settings > Database, copia la Connection String
-4. Formato: `postgresql://postgres:[password]@[host]:5432/postgres`
+2. Crea una cuenta y un nuevo proyecto llamado `karedesk-portal`
+3. En Project Settings > Database, copia la Connection String
+4. Formato: `postgresql://postgres:[password]@[host].supabase.co:5432/postgres`
 
 ### Opción 2: Railway
 1. Ve a [railway.app](https://railway.app)
@@ -15,8 +15,8 @@
 
 ### Opción 3: Neon (Serverless)
 1. Ve a [neon.tech](https://neon.tech)
-2. Crea una base de datos
-3. Copia la connection string
+2. Crea una cuenta y una nueva base de datos
+3. Copia la connection string de la sección "Connection Details"
 
 ## 🔧 Configuración en GitHub
 
@@ -37,12 +37,16 @@ Las variables ya están configuradas en tu repositorio:
 
 1. **Actualizar DATABASE_URL**:
    ```bash
-   gh secret set DATABASE_URL --body "tu-connection-string-real"
+   # Para Supabase:
+   gh secret set DATABASE_URL --body "postgresql://postgres:[TU-PASSWORD]@[TU-HOST].supabase.co:5432/postgres"
+   
+   # Para Neon:
+   gh secret set DATABASE_URL --body "tu-connection-string-de-neon"
    ```
 
 2. **Actualizar NEXTAUTH_URL**:
    ```bash
-   gh secret set NEXTAUTH_URL --body "https://tu-dominio.vercel.app"
+   gh secret set NEXTAUTH_URL --body "https://carpeta-sin-titulo-101.vercel.app"
    ```
 
 3. **Configurar Stripe** (reemplaza con tus claves reales):
@@ -51,6 +55,24 @@ Las variables ya están configuradas en tu repositorio:
    gh secret set STRIPE_WEBHOOK_SECRET --body "whsec_tu_webhook_real"
    gh variable set NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY --body "pk_live_tu_clave_publica"
    ```
+
+## 🔧 Configuración Post-Instalación
+
+Después de configurar la base de datos, ejecuta estos comandos:
+
+```bash
+# Generar cliente Prisma
+npm run db:generate
+
+# Crear y aplicar migraciones
+npm run db:migrate
+
+# Poblar con datos iniciales
+npm run db:seed
+
+# Verificar conexión
+npx prisma db pull
+```
 
 ## 🗄️ Comandos de Base de Datos
 
