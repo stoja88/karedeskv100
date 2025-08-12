@@ -3,6 +3,9 @@ import { useEffect, useState } from 'react'
 import { ThemeProvider } from '../../contexts/ThemeContext'
 import App from '../App'
 import ServiciosAsistenciaRemota from '../pages/ServiciosAsistenciaRemota'
+import ServiciosVulnerabilidades from '../pages/ServiciosVulnerabilidades'
+import ServiciosWebsExpress from '../pages/ServiciosWebsExpress'
+import ServiciosConsultoriaIA from '../pages/ServiciosConsultoriaIA'
 
 // Simple router for Vite
 export default function Router() {
@@ -21,33 +24,9 @@ export default function Router() {
   const routes: Record<string, React.ComponentType> = {
     '/': App,
     '/servicios/asistencia-remota': ServiciosAsistenciaRemota,
-    '/servicios/vulnerabilidades': () => (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold mb-4">Análisis de Vulnerabilidades</h1>
-          <p className="mb-4">Página próximamente disponible</p>
-          <a href="/" className="text-karedesk-primary hover:underline">← Volver al inicio</a>
-        </div>
-      </div>
-    ),
-    '/servicios/webs-express': () => (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold mb-4">Webs Express</h1>
-          <p className="mb-4">Página próximamente disponible</p>
-          <a href="/" className="text-karedesk-primary hover:underline">← Volver al inicio</a>
-        </div>
-      </div>
-    ),
-    '/servicios/consultoria-ia': () => (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold mb-4">Consultoría IA</h1>
-          <p className="mb-4">Página próximamente disponible</p>
-          <a href="/" className="text-karedesk-primary hover:underline">← Volver al inicio</a>
-        </div>
-      </div>
-    ),
+    '/servicios/vulnerabilidades': ServiciosVulnerabilidades,
+    '/servicios/webs-express': ServiciosWebsExpress,
+    '/servicios/consultoria-ia': ServiciosConsultoriaIA,
   }
 
   // Find matching route

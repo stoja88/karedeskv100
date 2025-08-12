@@ -1,12 +1,11 @@
 'use client'
 
 import { motion } from 'framer-motion'
-import Link from 'next/link'
 import { Globe, CheckCircle, Smartphone, Search, Palette, Code, Zap, Shield } from 'lucide-react'
-import Footer from '@/components/Footer'
-import ServiceContactForm from '@/components/ServiceContactForm'
+import Header from '../../components/Header'
+import Footer from '../../components/Footer'
 
-export default function WebsExpressPage() {
+export default function ServiciosWebsExpress() {
   const features = [
     {
       icon: Zap,
@@ -110,10 +109,20 @@ export default function WebsExpressPage() {
     }
   ]
 
+  const navigateTo = (path: string) => {
+    window.history.pushState({}, '', path)
+    window.dispatchEvent(new PopStateEvent('popstate'))
+  }
+
   return (
-    <>
-      {/* Hero Section - Standardized */}
-      <section className="pb-16 relative">
+    <div className="min-h-screen">
+      <Header />
+      
+      {/* Hero Section */}
+      <section className="pt-24 pb-16 relative overflow-hidden">
+        <div className="absolute inset-0 hero-bg"></div>
+        <div className="absolute bottom-20 left-10 w-72 h-72 bg-karedesk-primary/10 rounded-full blur-3xl floating-element"></div>
+        
         <div className="container mx-auto px-6 relative z-10">
           <div className="max-w-5xl mx-auto text-center">
             <motion.div
@@ -161,24 +170,24 @@ export default function WebsExpressPage() {
               transition={{ duration: 0.8, delay: 0.4 }}
               className="flex flex-col sm:flex-row gap-4 justify-center"
             >
-              <Link
-                href="#contacto"
+              <button
+                onClick={() => navigateTo('/#contacto')}
                 className="btn-primary px-10 py-4 rounded-xl text-black font-bold text-lg hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-karedesk-primary/25"
               >
                 🚀 Solicitar Presupuesto
-              </Link>
-              <Link
-                href="#tipos"
+              </button>
+              <button
+                onClick={() => document.getElementById('tipos')?.scrollIntoView({ behavior: 'smooth' })}
                 className="glass-effect px-10 py-4 rounded-xl font-semibold text-lg hover:bg-white/10 transition-all duration-300 border border-karedesk-primary/30 hover:border-karedesk-primary/60"
               >
                 💎 Ver Tipos de Web
-              </Link>
+              </button>
             </motion.div>
           </div>
         </div>
       </section>
 
-      {/* Features Section - Standardized */}
+      {/* Features Section */}
       <section className="py-24 relative">
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-karedesk-gray/20 to-transparent"></div>
         <div className="container mx-auto px-6 relative z-10">
@@ -225,7 +234,7 @@ export default function WebsExpressPage() {
         </div>
       </section>
 
-      {/* Web Types Section - Standardized */}
+      {/* Web Types Section */}
       <section id="tipos" className="py-24 relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-b from-karedesk-gray/30 via-karedesk-gray/50 to-karedesk-gray/30"></div>
         <div className="container mx-auto px-6 relative z-10">
@@ -261,14 +270,11 @@ export default function WebsExpressPage() {
                   }`}>
 
                   {type.popular && (
-                    <>
-                      <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 z-20">
-                        <span className="bg-gradient-to-r from-karedesk-primary to-green-400 text-black px-6 py-2 rounded-full text-sm font-bold shadow-lg">
-                          ⭐ Más Popular
-                        </span>
-                      </div>
-                      <div className="absolute inset-0 bg-gradient-to-br from-karedesk-primary/5 to-green-500/5 rounded-3xl"></div>
-                    </>
+                    <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 z-20">
+                      <span className="bg-gradient-to-r from-karedesk-primary to-green-400 text-black px-6 py-2 rounded-full text-sm font-bold shadow-lg">
+                        ⭐ Más Popular
+                      </span>
+                    </div>
                   )}
 
                   <div className="relative z-10">
@@ -282,51 +288,35 @@ export default function WebsExpressPage() {
                           {type.price}
                         </span>
                       </div>
-                      {type.popular && (
-                        <div className="text-sm text-karedesk-primary font-semibold">
-                          💎 Mejor relación calidad-precio
-                        </div>
-                      )}
                     </div>
 
                     <div className="space-y-4 mb-10">
                       {type.features.map((feature, featureIndex) => (
-                        <motion.div
-                          key={featureIndex}
-                          className="flex items-start space-x-3"
-                          initial={{ opacity: 0, x: -10 }}
-                          whileInView={{ opacity: 1, x: 0 }}
-                          transition={{ duration: 0.5, delay: featureIndex * 0.1 }}
-                          viewport={{ once: true }}
-                        >
+                        <div key={featureIndex} className="flex items-start space-x-3">
                           <CheckCircle className="w-5 h-5 text-karedesk-primary flex-shrink-0 mt-0.5" />
                           <span className="text-gray-300 leading-relaxed">{feature}</span>
-                        </motion.div>
+                        </div>
                       ))}
                     </div>
 
                     <div className="flex flex-col sm:flex-row gap-3">
-                      <Link
-                        href={`/checkout?service=EXPRESS_WEB_CREATION&plan=${type.title}&amount=${type.price.replace('€','').replace(',','')}`}
-                        className={`flex-1 py-4 rounded-xl font-bold text-center block transition-all duration-300 text-lg ${type.popular
+                      <button
+                        onClick={() => alert(`Pago de ${type.title} - ${type.price} implementado próximamente`)}
+                        className={`flex-1 py-4 rounded-xl font-bold text-center transition-all duration-300 text-lg ${type.popular
                             ? 'btn-primary text-black hover:scale-105 shadow-lg hover:shadow-karedesk-primary/25'
                             : 'btn-primary text-black'
                           }`}
                       >
                         💳 Pagar ahora
-                      </Link>
-                      <Link
-                        href="#contacto"
+                      </button>
+                      <button
+                        onClick={() => navigateTo('/#contacto')}
                         className="flex-1 glass-effect py-4 rounded-xl font-semibold text-center border border-karedesk-primary/30 hover:bg-white/10 hover:border-karedesk-primary/60 transition-all duration-300"
                       >
                         📞 Consultar primero
-                      </Link>
+                      </button>
                     </div>
                   </div>
-
-                  {!type.popular && (
-                    <div className="absolute inset-0 rounded-3xl bg-gradient-to-br from-karedesk-primary/5 to-green-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                  )}
                 </div>
               </motion.div>
             ))}
@@ -375,19 +365,7 @@ export default function WebsExpressPage() {
         </div>
       </section>
 
-      {/* Contact Section */}
-      <section id="contacto" className="py-24 relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-b from-karedesk-gray/30 via-karedesk-gray/50 to-karedesk-gray/30"></div>
-        <div className="container mx-auto px-6 relative z-10">
-          <ServiceContactForm 
-            service="EXPRESS_WEB_CREATION"
-            title="Solicita tu Web Express"
-            description="Cuéntanos sobre tu proyecto y te enviaremos una propuesta personalizada en menos de 24 horas."
-          />
-        </div>
-      </section>
-
       <Footer />
-    </>
+    </div>
   )
 }

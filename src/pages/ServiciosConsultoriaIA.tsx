@@ -1,12 +1,11 @@
 'use client'
 
 import { motion } from 'framer-motion'
-import Link from 'next/link'
 import { Brain, CheckCircle, Bot, BarChart, Cog, Users, Lightbulb, Target } from 'lucide-react'
-import Footer from '@/components/Footer'
-import ServiceContactForm from '@/components/ServiceContactForm'
+import Header from '../../components/Header'
+import Footer from '../../components/Footer'
 
-export default function ConsultoriaIAPage() {
+export default function ServiciosConsultoriaIA() {
   const features = [
     {
       icon: BarChart,
@@ -91,7 +90,6 @@ export default function ConsultoriaIAPage() {
     {
       name: 'Consultoría Básica',
       price: '€1,299',
-      period: 'único',
       features: [
         'Análisis inicial de procesos',
         'Identificación de oportunidades',
@@ -99,13 +97,12 @@ export default function ConsultoriaIAPage() {
         'Roadmap de 6 meses',
         '2 sesiones de consultoría',
         'Reporte ejecutivo'
-      ],
-      popular: false
+      ]
     },
     {
       name: 'Implementación IA',
       price: '€3,999',
-      period: 'único',
+      popular: true,
       features: [
         'Todo lo del plan básico',
         'Desarrollo de solución IA',
@@ -114,13 +111,11 @@ export default function ConsultoriaIAPage() {
         'Soporte 3 meses',
         'Optimización inicial',
         'Documentación completa'
-      ],
-      popular: true
+      ]
     },
     {
       name: 'Transformación Digital',
       price: '€9,999',
-      period: 'único',
       features: [
         'Consultoría estratégica completa',
         'Múltiples soluciones IA',
@@ -130,8 +125,7 @@ export default function ConsultoriaIAPage() {
         'Consultor dedicado',
         'ROI garantizado',
         'Escalabilidad futura'
-      ],
-      popular: false
+      ]
     }
   ]
 
@@ -146,10 +140,20 @@ export default function ConsultoriaIAPage() {
     { name: 'Retail', icon: '🏪' }
   ]
 
+  const navigateTo = (path: string) => {
+    window.history.pushState({}, '', path)
+    window.dispatchEvent(new PopStateEvent('popstate'))
+  }
+
   return (
-    <>
-      {/* Hero Section - Standardized */}
-      <section className="pb-16 relative">
+    <div className="min-h-screen">
+      <Header />
+      
+      {/* Hero Section */}
+      <section className="pt-24 pb-16 relative overflow-hidden">
+        <div className="absolute inset-0 hero-bg"></div>
+        <div className="absolute top-20 right-10 w-96 h-96 bg-karedesk-primary/10 rounded-full blur-3xl floating-element"></div>
+        
         <div className="container mx-auto px-6 relative z-10">
           <div className="max-w-5xl mx-auto text-center">
             <motion.div
@@ -197,24 +201,24 @@ export default function ConsultoriaIAPage() {
               transition={{ duration: 0.8, delay: 0.4 }}
               className="flex flex-col sm:flex-row gap-4 justify-center"
             >
-              <Link
-                href="#contacto"
+              <button
+                onClick={() => navigateTo('/#contacto')}
                 className="btn-primary px-10 py-4 rounded-xl text-black font-bold text-lg hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-karedesk-primary/25"
               >
                 🚀 Consulta Gratuita
-              </Link>
-              <Link
-                href="#soluciones"
+              </button>
+              <button
+                onClick={() => document.getElementById('soluciones')?.scrollIntoView({ behavior: 'smooth' })}
                 className="glass-effect px-10 py-4 rounded-xl font-semibold text-lg hover:bg-white/10 transition-all duration-300 border border-karedesk-primary/30 hover:border-karedesk-primary/60"
               >
                 💎 Ver Soluciones
-              </Link>
+              </button>
             </motion.div>
           </div>
         </div>
       </section>
 
-      {/* Features Section - Standardized */}
+      {/* Features Section */}
       <section className="py-24 relative">
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-karedesk-gray/20 to-transparent"></div>
         <div className="container mx-auto px-6 relative z-10">
@@ -333,7 +337,7 @@ export default function ConsultoriaIAPage() {
                 whileInView={{ opacity: 1, scale: 1 }}
                 transition={{ duration: 0.6, delay: index * 0.1 }}
                 viewport={{ once: true }}
-                className="glass-effect rounded-xl p-6 text-center hover:bg-white/10 transition-colors duration-300"
+                className="glass-effect rounded-xl p-6 text-center hover:bg-white/10 transition-colors"
               >
                 <div className="text-4xl mb-3">{industry.icon}</div>
                 <h3 className="font-semibold text-gray-300">{industry.name}</h3>
@@ -343,7 +347,7 @@ export default function ConsultoriaIAPage() {
         </div>
       </section>
 
-      {/* Packages Section - Standardized */}
+      {/* Packages Section */}
       <section className="py-24 relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-b from-karedesk-gray/30 via-karedesk-gray/50 to-karedesk-gray/30"></div>
         <div className="container mx-auto px-6 relative z-10">
@@ -379,14 +383,11 @@ export default function ConsultoriaIAPage() {
                   }`}>
 
                   {pkg.popular && (
-                    <>
-                      <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 z-20">
-                        <span className="bg-gradient-to-r from-karedesk-primary to-purple-400 text-black px-6 py-2 rounded-full text-sm font-bold shadow-lg">
-                          ⭐ Más Popular
-                        </span>
-                      </div>
-                      <div className="absolute inset-0 bg-gradient-to-br from-karedesk-primary/5 to-purple-500/5 rounded-3xl"></div>
-                    </>
+                    <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 z-20">
+                      <span className="bg-gradient-to-r from-karedesk-primary to-purple-400 text-black px-6 py-2 rounded-full text-sm font-bold shadow-lg">
+                        ⭐ Más Popular
+                      </span>
+                    </div>
                   )}
 
                   <div className="relative z-10">
@@ -398,53 +399,37 @@ export default function ConsultoriaIAPage() {
                         <span className={`text-5xl font-bold ${pkg.popular ? 'gradient-text bg-gradient-to-r from-karedesk-primary to-purple-400 bg-clip-text text-transparent' : 'text-white'}`}>
                           {pkg.price}
                         </span>
-                        <span className="text-gray-400 ml-2 text-lg">{pkg.period}</span>
+                        <span className="text-gray-400 ml-2 text-lg">único</span>
                       </div>
-                      {pkg.popular && (
-                        <div className="text-sm text-karedesk-primary font-semibold">
-                          💎 Mejor relación calidad-precio
-                        </div>
-                      )}
                     </div>
 
                     <div className="space-y-4 mb-10">
                       {pkg.features.map((feature, featureIndex) => (
-                        <motion.div
-                          key={featureIndex}
-                          className="flex items-start space-x-3"
-                          initial={{ opacity: 0, x: -10 }}
-                          whileInView={{ opacity: 1, x: 0 }}
-                          transition={{ duration: 0.5, delay: featureIndex * 0.1 }}
-                          viewport={{ once: true }}
-                        >
+                        <div key={featureIndex} className="flex items-start space-x-3">
                           <CheckCircle className="w-5 h-5 text-karedesk-primary flex-shrink-0 mt-0.5" />
                           <span className="text-gray-300 leading-relaxed">{feature}</span>
-                        </motion.div>
+                        </div>
                       ))}
                     </div>
 
                     <div className="flex flex-col sm:flex-row gap-3">
-                      <Link
-                        href={`/checkout?service=AI_CONSULTING&plan=${pkg.name}&amount=${pkg.price.replace('€','').replace(',','')}`}
-                        className={`flex-1 py-4 rounded-xl font-bold text-center block transition-all duration-300 text-lg ${pkg.popular
+                      <button
+                        onClick={() => alert(`Pago de ${pkg.name} - ${pkg.price} implementado próximamente`)}
+                        className={`flex-1 py-4 rounded-xl font-bold text-center transition-all duration-300 text-lg ${pkg.popular
                             ? 'btn-primary text-black hover:scale-105 shadow-lg hover:shadow-karedesk-primary/25'
                             : 'btn-primary text-black'
                           }`}
                       >
                         💳 Pagar ahora
-                      </Link>
-                      <Link
-                        href="#contacto"
+                      </button>
+                      <button
+                        onClick={() => navigateTo('/#contacto')}
                         className="flex-1 glass-effect py-4 rounded-xl font-semibold text-center border border-karedesk-primary/30 hover:bg-white/10 hover:border-karedesk-primary/60 transition-all duration-300"
                       >
                         📞 Consultar primero
-                      </Link>
+                      </button>
                     </div>
                   </div>
-
-                  {!pkg.popular && (
-                    <div className="absolute inset-0 rounded-3xl bg-gradient-to-br from-karedesk-primary/5 to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                  )}
                 </div>
               </motion.div>
             ))}
@@ -452,18 +437,7 @@ export default function ConsultoriaIAPage() {
         </div>
       </section>
 
-      {/* Contact Section */}
-      <section id="contacto" className="py-24 relative overflow-hidden">
-        <div className="container mx-auto px-6 relative z-10">
-          <ServiceContactForm 
-            service="AI_CONSULTING"
-            title="Solicita tu Consultoría en IA"
-            description="Cuéntanos sobre tu negocio y los desafíos que enfrentas. Nuestros expertos en IA te ayudarán a encontrar la solución perfecta."
-          />
-        </div>
-      </section>
-
       <Footer />
-    </>
+    </div>
   )
 }
